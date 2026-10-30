@@ -1,0 +1,914 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ÚLTIMO ABRIGO - SETEC</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&family=VT323&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --brightness-level: 1;
+        }
+
+        body {
+            font-family: 'VT323', monospace;
+            background-color: #030712;
+            color: #f3f4f6;
+            filter: brightness(var(--brightness-level));
+            user-select: none;
+            overflow-x: hidden;
+            margin: 0;
+            padding: 0;
+        }
+
+        .pixel-font {
+            font-family: 'Press Start 2P', cursive;
+        }
+
+        /* Efeito de Título Pixel Neon Synth */
+        .pixel-title {
+            font-family: 'Press Start 2P', cursive;
+            text-shadow: 
+                3px 3px 0px #ec4899,
+                6px 6px 0px #8b5cf6,
+                9px 9px 0px #000;
+        }
+
+        .pixel-subtitle {
+            font-family: 'Press Start 2P', cursive;
+            text-shadow: 
+                2px 2px 0px #06b6d4,
+                4px 4px 0px #000;
+        }
+
+        .pixel-box {
+            border: 4px solid #ec4899;
+            box-shadow: 0 0 15px rgba(236, 72, 153, 0.4), inset 0 0 15px rgba(236, 72, 153, 0.2);
+            background: rgba(15, 23, 42, 0.95);
+        }
+
+        .pixel-btn {
+            font-family: 'Press Start 2P', cursive;
+            transition: all 0.1s ease;
+            box-shadow: 4px 4px 0px #000;
+        }
+
+        .pixel-btn:hover {
+            transform: translate(-2px, -2px);
+            box-shadow: 6px 6px 0px #000;
+        }
+
+        .pixel-btn:active {
+            transform: translate(2px, 2px);
+            box-shadow: 2px 2px 0px #000;
+        }
+
+        canvas {
+            image-rendering: pixelated;
+            background-color: #050814;
+        }
+
+        /* Animação do Brilho das Fogueiras e Raios */
+        @keyframes pulseGlow {
+            0%, 100% { opacity: 0.8; transform: scale(1); }
+            50% { opacity: 1; transform: scale(1.05); }
+        }
+
+        .glow-effect {
+            animation: pulseGlow 2s infinite ease-in-out;
+        }
+    </style>
+</head>
+<body class="min-h-screen flex flex-col justify-between items-center p-2 md:p-4">
+
+    <!-- 1. TELA DE INÍCIO / MENU PRINCIPAL -->
+    <div id="start-menu-screen" class="fixed inset-0 z-50 flex flex-col items-center justify-center bg-slate-950 p-4">
+        <div class="pixel-box max-w-xl w-full p-6 md:p-8 rounded-xl text-center flex flex-col items-center gap-6 border-pink-500">
+            
+            <!-- Título do Jogo -->
+            <div class="my-2">
+                <h1 class="pixel-title text-2xl md:text-4xl text-yellow-300 leading-relaxed tracking-wider mb-2">
+                    ÚLTIMO ABRIGO
+                </h1>
+                <h2 class="pixel-subtitle text-xl md:text-2xl text-cyan-400 mt-4 tracking-widest">
+                    SETEC
+                </h2>
+            </div>
+
+            <p class="text-xl md:text-2xl text-slate-300 max-w-md my-2">
+                Desafio Ecotecnológico de Sobrevivência na Floresta
+            </p>
+
+            <!-- Botões Principais -->
+            <div class="flex flex-col gap-4 w-full max-w-xs">
+                <button onclick="startGameFromMenu()" onmouseenter="playHoverSound()" class="pixel-btn bg-emerald-500 hover:bg-emerald-400 text-slate-950 text-sm md:text-base py-4 px-6 rounded border-2 border-emerald-300">
+                    ▶ INICIAR JOGO
+                </button>
+                <button onclick="openMenuSection('settings-modal')" onmouseenter="playHoverSound()" class="pixel-btn bg-purple-600 hover:bg-purple-500 text-white text-xs md:text-sm py-3 px-6 rounded border-2 border-purple-300">
+                    ⚙ OPÇÕES
+                </button>
+                <button onclick="openMenuSection('instructions-modal')" onmouseenter="playHoverSound()" class="pixel-btn bg-cyan-600 hover:bg-cyan-500 text-white text-xs md:text-sm py-3 px-6 rounded border-2 border-cyan-300">
+                    📖 INSTRUÇÕES
+                </button>
+            </div>
+
+            <div class="text-xs md:text-sm text-slate-500 mt-4">
+                Feira de Tecnologia SETEC • Modos Desktop e Mobile
+            </div>
+        </div>
+    </div>
+
+    <!-- 2. CABEÇALHO DO JOGO (HUD) -->
+    <header id="game-header" class="w-full max-w-4xl flex justify-between items-center bg-slate-900 border-2 border-slate-700 p-3 rounded-lg mb-2 hidden">
+        <div class="flex items-center gap-4">
+            <span class="pixel-font text-xs text-yellow-400">ÚLTIMO ABRIGO</span>
+            <span class="text-slate-400">|</span>
+            <span class="text-emerald-400 font-bold">SETEC 2026</span>
+        </div>
+        <div class="flex items-center gap-3">
+            <div class="flex items-center gap-2 bg-slate-800 px-3 py-1 rounded border border-slate-700">
+                <span class="text-rose-500 font-bold">VIDA:</span>
+                <span id="rpg-hp-text" class="text-white font-bold">100/100</span>
+            </div>
+            <div class="flex items-center gap-2 bg-slate-800 px-3 py-1 rounded border border-slate-700">
+                <span class="text-cyan-400 font-bold">META:</span>
+                <span id="rpg-distance" class="text-white font-bold">1000m</span>
+            </div>
+            <button onclick="openMenuFromGame()" class="bg-slate-800 hover:bg-slate-700 p-2 rounded border border-slate-600 text-xs">
+                ⚙️
+            </button>
+        </div>
+    </header>
+
+    <!-- 3. TELA DO JOGO (CANVAS 2D) -->
+    <main id="rpg-game-screen" class="w-full max-w-4xl flex flex-col items-center hidden relative">
+        <div class="relative w-full overflow-hidden rounded-lg border-4 border-slate-800 shadow-2xl">
+            <canvas id="gameCanvas" width="800" height="320" class="w-full h-auto block"></canvas>
+
+            <!-- Overlay de Botões Touch para Telas Sensíveis ao Toque -->
+            <div class="md:hidden absolute bottom-2 left-2 right-2 flex justify-between items-center pointer-events-none">
+                <div class="flex gap-2 pointer-events-auto">
+                    <button id="btn-left" class="w-12 h-12 bg-slate-900/80 text-white font-bold text-xl rounded-full border-2 border-slate-600 active:bg-cyan-600 flex items-center justify-center">◄</button>
+                    <button id="btn-right" class="w-12 h-12 bg-slate-900/80 text-white font-bold text-xl rounded-full border-2 border-slate-600 active:bg-cyan-600 flex items-center justify-center">►</button>
+                </div>
+                <div class="pointer-events-auto">
+                    <button id="btn-jump" class="w-14 h-14 bg-emerald-600/80 text-white font-bold text-sm rounded-full border-2 border-emerald-400 active:bg-emerald-500 flex items-center justify-center pixel-font">PULO</button>
+                </div>
+            </div>
+        </div>
+
+        <div class="w-full flex justify-between items-center mt-2 px-2 text-xs text-slate-400">
+            <span>Controles PC: <strong class="text-slate-200">A / D / Setas</strong> (Andar) | <strong class="text-slate-200">Espaço / W / Seta Cima</strong> (Pular)</span>
+            <span>Responda aos <strong class="text-amber-400">QUIZZES</strong> para sobreviver!</span>
+        </div>
+    </main>
+
+    <!-- MODAL DE REGULAGENS / OPÇÕES -->
+    <div id="settings-modal" class="fixed inset-0 bg-black/80 z-50 flex items-center justify-center p-4 hidden">
+        <div class="pixel-box max-w-md w-full p-6 rounded-lg text-left">
+            <h3 class="pixel-font text-lg text-purple-400 mb-6 text-center">⚙ REGULAGENS</h3>
+            
+            <div class="flex flex-col gap-5">
+                <div>
+                    <label class="block text-slate-300 text-sm mb-2">🔊 Som e Efeitos:</label>
+                    <input type="range" id="volume-range" min="0" max="100" value="80" oninput="updateSettings()" class="w-full accent-purple-500 cursor-pointer">
+                </div>
+
+                <div>
+                    <label class="block text-slate-300 text-sm mb-2">📳 Vibração (Mobile):</label>
+                    <button id="vibe-btn" onclick="toggleVibrationSetting()" class="w-full py-2 bg-slate-800 hover:bg-slate-700 text-emerald-400 border border-slate-600 rounded text-center">
+                        Vibração: ATIVADA
+                    </button>
+                </div>
+
+                <div>
+                    <label class="block text-slate-300 text-sm mb-2">☀️ Luminosidade:</label>
+                    <input type="range" id="bright-range" min="30" max="130" value="100" oninput="updateSettings()" class="w-full accent-cyan-400 cursor-pointer">
+                </div>
+            </div>
+
+            <div class="mt-8 flex justify-center">
+                <button onclick="closeMenuSections()" class="pixel-btn bg-rose-600 hover:bg-rose-500 text-white text-xs py-3 px-6 rounded">
+                    VOLTAR
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- MODAL DE INSTRUÇÕES -->
+    <div id="instructions-modal" class="fixed inset-0 bg-black/80 z-50 flex items-center justify-center p-4 hidden">
+        <div class="pixel-box max-w-md w-full p-6 rounded-lg text-left">
+            <h3 class="pixel-font text-base text-cyan-400 mb-4 text-center">📖 COMO JOGAR</h3>
+            <ul class="space-y-3 text-sm text-slate-300 leading-relaxed">
+                <li>🌲 <strong>Sobreviva na Floresta:</strong> Corra e desvie de espinhos e troncos caídos.</li>
+                <li>⚡ <strong>Física de Pulo:</strong> Pressione espaço ou toque no botão para saltar sobre os obstáculos.</li>
+                <li>🧠 <strong>Checkpoints de Quiz:</strong> Encontre as placas de <strong class="text-amber-400">QUIZ</strong> e responda corretamente para recuperar vida e avançar.</li>
+                <li>🏆 <strong>Chegue ao Fim:</strong> Complete a travessia de 1000 metros para escapar!</li>
+            </ul>
+            <div class="mt-6 flex justify-center">
+                <button onclick="closeMenuSections()" class="pixel-btn bg-cyan-600 hover:bg-cyan-500 text-white text-xs py-3 px-6 rounded">
+                    ENTENDI
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- MODAL DE PERGUNTA (QUIZ) -->
+    <div id="quiz-modal" class="fixed inset-0 bg-black/85 z-50 flex items-center justify-center p-4 hidden">
+        <div class="pixel-box max-w-lg w-full p-6 rounded-lg border-amber-500">
+            <div class="flex items-center gap-2 mb-4">
+                <span class="px-2 py-1 bg-amber-500 text-slate-950 font-bold text-xs rounded">DESAFIO SETEC</span>
+                <span id="quiz-title" class="text-amber-400 font-bold text-sm">Pergunta Ecotecnológica</span>
+            </div>
+            <p id="quiz-question" class="text-lg text-slate-100 mb-6 leading-snug">
+                Pergunta aqui...
+            </p>
+            <div id="quiz-options" class="flex flex-col gap-3">
+                <!-- Opções injetadas via JS -->
+            </div>
+        </div>
+    </div>
+
+    <!-- MODAL DE FIM DE JOGO / VITÓRIA -->
+    <div id="end-modal" class="fixed inset-0 bg-black/90 z-50 flex items-center justify-center p-4 hidden">
+        <div id="end-box" class="pixel-box max-w-md w-full p-6 rounded-lg text-center">
+            <h3 id="end-title" class="pixel-font text-xl mb-4">FIM DE JOGO</h3>
+            <p id="end-message" class="text-slate-300 text-lg mb-6">
+                Resultado...
+            </p>
+            <button onclick="resetGame()" class="pixel-btn bg-emerald-500 hover:bg-emerald-400 text-slate-950 text-xs py-3 px-6 rounded border border-emerald-300">
+                🔄 JOGAR NOVAMENTE
+            </button>
+        </div>
+    </div>
+
+    <script>
+        // System Settings State
+        let soundVolume = 0.8;
+        let vibrationEnabled = true;
+        let brightnessLevel = 1.0;
+
+        // Web Audio API Synth Engine
+        let audioCtx = null;
+
+        function initAudio() {
+            if (!audioCtx) {
+                audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+            }
+        }
+
+        function playSound(type) {
+            if (soundVolume <= 0) return;
+            try {
+                initAudio();
+                const osc = audioCtx.createOscillator();
+                const gain = audioCtx.createGain();
+                osc.connect(gain);
+                gain.connect(audioCtx.destination);
+
+                const now = audioCtx.currentTime;
+                if (type === 'jump') {
+                    osc.type = 'square';
+                    osc.frequency.setValueAtTime(150, now);
+                    osc.frequency.exponentialRampToValueAtTime(400, now + 0.15);
+                    gain.gain.setValueAtTime(0.15 * soundVolume, now);
+                    gain.gain.linearRampToValueAtTime(0, now + 0.15);
+                    osc.start(now);
+                    osc.stop(now + 0.15);
+                } else if (type === 'hit') {
+                    osc.type = 'sawtooth';
+                    osc.frequency.setValueAtTime(220, now);
+                    osc.frequency.linearRampToValueAtTime(60, now + 0.2);
+                    gain.gain.setValueAtTime(0.3 * soundVolume, now);
+                    gain.gain.linearRampToValueAtTime(0, now + 0.2);
+                    osc.start(now);
+                    osc.stop(now + 0.2);
+                } else if (type === 'correct') {
+                    osc.type = 'sine';
+                    osc.frequency.setValueAtTime(300, now);
+                    osc.frequency.setValueAtTime(500, now + 0.1);
+                    gain.gain.setValueAtTime(0.2 * soundVolume, now);
+                    gain.gain.linearRampToValueAtTime(0, now + 0.25);
+                    osc.start(now);
+                    osc.stop(now + 0.25);
+                } else if (type === 'hover') {
+                    osc.type = 'triangle';
+                    osc.frequency.setValueAtTime(400, now);
+                    gain.gain.setValueAtTime(0.05 * soundVolume, now);
+                    gain.gain.linearRampToValueAtTime(0, now + 0.05);
+                    osc.start(now);
+                    osc.stop(now + 0.05);
+                }
+            } catch (e) {}
+        }
+
+        function playHoverSound() {
+            playSound('hover');
+        }
+
+        function triggerVibration(ms) {
+            if (vibrationEnabled && navigator.vibrate) {
+                navigator.vibrate(ms);
+            }
+        }
+
+        // UI & Modals Management
+        function openMenuSection(modalId) {
+            document.getElementById(modalId).classList.remove('hidden');
+        }
+
+        function closeMenuSections() {
+            document.getElementById('settings-modal').classList.add('hidden');
+            document.getElementById('instructions-modal').classList.add('hidden');
+        }
+
+        function openMenuFromGame() {
+            openMenuSection('settings-modal');
+        }
+
+        function toggleVibrationSetting() {
+            vibrationEnabled = !vibrationEnabled;
+            const btn = document.getElementById('vibe-btn');
+            btn.innerText = `Vibração: ${vibrationEnabled ? 'ATIVADA' : 'DESATIVADA'}`;
+            btn.className = `w-full py-2 bg-slate-800 hover:bg-slate-700 ${vibrationEnabled ? 'text-emerald-400' : 'text-rose-400'} border border-slate-600 rounded text-center`;
+        }
+
+        function updateSettings() {
+            const volVal = document.getElementById('volume-range').value;
+            soundVolume = volVal / 100;
+
+            const brightVal = document.getElementById('bright-range').value;
+            brightnessLevel = brightVal / 100;
+            document.documentElement.style.setProperty('--brightness-level', brightnessLevel);
+        }
+
+        // Game State & Questions Database
+        const gameState = {
+            distanceLeft: 1000
+        };
+
+        const quizQuestions = [
+            {
+                q: "Qual fonte de energia renovável utiliza a força do vento?",
+                options: ["Eólica", "Solar", "Geotérmica", "Hidrelétrica"],
+                correct: 0
+            },
+            {
+                q: "Qual dessas ações reduz o desperdício de água potável no acampamento?",
+                options: ["Lavar itens em água corrente sem parar", "Reutilizar água da chuva filtrada", "Deixar torneira aberta", "Usar água limpa para tudo"],
+                correct: 1
+            },
+            {
+                q: "Na reciclagem, qual a cor da lixeira destinada ao plástico?",
+                options: ["Verde", "Azul", "Amarela", "Vermelha"],
+                correct: 3
+            },
+            {
+                q: "O que caracteriza uma tecnologia limpa?",
+                options: ["Alta emissão de CO2", "Uso consciente de recursos e zero resíduos tóxicos", "Gasto excessivo de energia", "Uso de combustíveis fósseis"],
+                correct: 1
+            }
+        ];
+
+        let currentQuizIndex = 0;
+
+        // Motor 2D e Física
+        let canvas, ctx;
+        let gameLoopId = null;
+        let activeQuiz = false;
+        const keys = {};
+
+        const player = {
+            x: 80,
+            y: 200,
+            width: 32,
+            height: 48,
+            vx: 0,
+            vy: 0,
+            speed: 4.5,
+            accel: 0.8,
+            friction: 0.82,
+            jumpForce: -11.5,
+            gravity: 0.58,
+            hp: 100,
+            maxHp: 100,
+            grounded: false,
+            facingRight: true,
+            coyoteTime: 0,
+            jumpBuffer: 0,
+            animFrame: 0,
+            squashX: 1,
+            squashY: 1
+        };
+
+        let cameraX = 0;
+        let obstacles = [];
+        let checkpoints = [];
+        let rainDrops = [];
+        let clouds = [];
+        let campfires = [];
+        let campfireParticles = [];
+        let lightningFlash = 0;
+
+        function initEnvironmentEffects() {
+            rainDrops = [];
+            for (let i = 0; i < 110; i++) {
+                rainDrops.push({
+                    x: Math.random() * 900,
+                    y: Math.random() * 400,
+                    speedY: 10 + Math.random() * 6,
+                    speedX: -2.5 + Math.random() * 1,
+                    length: 10 + Math.random() * 12
+                });
+            }
+
+            clouds = [];
+            for (let i = 0; i < 8; i++) {
+                clouds.push({
+                    x: Math.random() * 2500,
+                    y: 15 + Math.random() * 45,
+                    width: 90 + Math.random() * 120,
+                    speed: 0.2 + Math.random() * 0.3
+                });
+            }
+
+            campfires = [
+                { x: 450, y: 245 },
+                { x: 1500, y: 245 },
+                { x: 2300, y: 245 }
+            ];
+
+            campfireParticles = [];
+            lightningFlash = 0;
+        }
+
+        function render() {
+            if (!ctx) return;
+
+            // Animação de Passos
+            if (Math.abs(player.vx) > 0.5 && player.grounded) {
+                player.animFrame += 0.25;
+            } else {
+                player.animFrame = 0;
+            }
+
+            // Flash de Raio na Tempestade
+            if (Math.random() < 0.008) {
+                lightningFlash = 0.8;
+            }
+            if (lightningFlash > 0) {
+                lightningFlash -= 0.05;
+            }
+
+            // 1. Céu de fundo com tempestade e raios
+            if (lightningFlash > 0.1) {
+                ctx.fillStyle = `rgba(224, 242, 254, ${lightningFlash})`;
+            } else {
+                ctx.fillStyle = '#050814';
+            }
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+            // Nuvens de tempestade no horizonte
+            clouds.forEach(cloud => {
+                cloud.x -= cloud.speed;
+                if (cloud.x + cloud.width < cameraX) cloud.x = cameraX + canvas.width + 50;
+                const rx = cloud.x - cameraX * 0.3;
+                ctx.fillStyle = 'rgba(30, 41, 59, 0.7)';
+                ctx.beginPath();
+                ctx.arc(rx, cloud.y, 25, 0, Math.PI * 2);
+                ctx.arc(rx + 25, cloud.y - 10, 35, 0, Math.PI * 2);
+                ctx.arc(rx + 55, cloud.y, 25, 0, Math.PI * 2);
+                ctx.fill();
+            });
+
+            // 2. Mata Densa de Fundo
+            ctx.fillStyle = '#091d1e';
+            for (let x = -cameraX * 0.2; x < canvas.width + 100; x += 60) {
+                ctx.beginPath();
+                ctx.moveTo(x, 275);
+                ctx.lineTo(x + 30, 110);
+                ctx.lineTo(x + 60, 275);
+                ctx.fill();
+            }
+
+            // 3. Floresta Intermediária
+            for (let x = -cameraX * 0.5; x < canvas.width + 120; x += 110) {
+                ctx.fillStyle = '#1e293b';
+                ctx.fillRect(x + 20, 150, 16, 125);
+                ctx.fillStyle = '#047857';
+                ctx.beginPath();
+                ctx.arc(x + 28, 140, 38, 0, Math.PI * 2);
+                ctx.arc(x + 8, 120, 28, 0, Math.PI * 2);
+                ctx.arc(x + 48, 120, 28, 0, Math.PI * 2);
+                ctx.fill();
+            }
+
+            // 4. Solo da Floresta
+            ctx.fillStyle = '#065f46';
+            ctx.fillRect(0, 275, canvas.width, canvas.height - 275);
+            ctx.fillStyle = '#022c22';
+            ctx.fillRect(0, 282, canvas.width, canvas.height - 282);
+
+            // Grama e Detalhes
+            ctx.fillStyle = '#10b981';
+            for (let gx = 0; gx < canvas.width; gx += 16) {
+                ctx.fillRect(gx, 273, 8, 3);
+            }
+
+            // Acampamentos com Barraca e Fogueira Animada
+            campfires.forEach(camp => {
+                const rx = camp.x - cameraX;
+                if (rx > -100 && rx < canvas.width + 100) {
+                    ctx.fillStyle = '#b45309';
+                    ctx.beginPath();
+                    ctx.moveTo(rx - 40, 275);
+                    ctx.lineTo(rx - 10, 215);
+                    ctx.lineTo(rx + 20, 275);
+                    ctx.closePath();
+                    ctx.fill();
+
+                    ctx.fillStyle = '#451a03';
+                    ctx.fillRect(rx + 26, 271, 20, 5);
+                    ctx.fillStyle = '#78350f';
+                    ctx.fillRect(rx + 28, 268, 16, 4);
+
+                    const fireGlow = ctx.createRadialGradient(rx + 36, 265, 2, rx + 36, 265, 40);
+                    fireGlow.addColorStop(0, 'rgba(249, 115, 22, 0.45)');
+                    fireGlow.addColorStop(1, 'rgba(249, 115, 22, 0)');
+                    ctx.fillStyle = fireGlow;
+                    ctx.beginPath();
+                    ctx.arc(rx + 36, 265, 40, 0, Math.PI * 2);
+                    ctx.fill();
+
+                    ctx.fillStyle = '#f97316';
+                    ctx.beginPath();
+                    ctx.moveTo(rx + 28, 270);
+                    ctx.quadraticCurveTo(rx + 36 + (Math.random() * 6 - 3), 240 + (Math.random() * 4), rx + 44, 270);
+                    ctx.fill();
+
+                    ctx.fillStyle = '#fde047';
+                    ctx.beginPath();
+                    ctx.moveTo(rx + 31, 270);
+                    ctx.quadraticCurveTo(rx + 36 + (Math.random() * 4 - 2), 248 + (Math.random() * 3), rx + 41, 270);
+                    ctx.fill();
+
+                    if (Math.random() < 0.45) {
+                        campfireParticles.push({
+                            x: rx + 36 + (Math.random() * 10 - 5),
+                            y: 262,
+                            vx: -0.6 + Math.random() * 1.2,
+                            vy: -1.2 - Math.random() * 1.6,
+                            size: 1.5 + Math.random() * 2,
+                            life: 1.0,
+                            decay: 0.02 + Math.random() * 0.03
+                        });
+                    }
+                }
+            });
+
+            // Partículas de Brasas
+            for (let i = campfireParticles.length - 1; i >= 0; i--) {
+                const p = campfireParticles[i];
+                p.x += p.vx;
+                p.y += p.vy;
+                p.life -= p.decay;
+
+                if (p.life <= 0) {
+                    campfireParticles.splice(i, 1);
+                } else {
+                    ctx.fillStyle = `rgba(253, 224, 71, ${p.life})`;
+                    ctx.beginPath();
+                    ctx.arc(p.x, p.y, p.size, 0, Math.PI * 2);
+                    ctx.fill();
+                }
+            }
+
+            // Obstáculos
+            obstacles.forEach(obs => {
+                const rx = obs.x - cameraX;
+                if (rx > -50 && rx < canvas.width + 50) {
+                    if (obs.type === 'spikes') {
+                        ctx.fillStyle = '#94a3b8';
+                        for (let s = 0; s < obs.width; s += 8) {
+                            ctx.beginPath();
+                            ctx.moveTo(rx + s, 275);
+                            ctx.lineTo(rx + s + 4, 275 - obs.height);
+                            ctx.lineTo(rx + s + 8, 275);
+                            ctx.fill();
+                        }
+                    } else {
+                        ctx.fillStyle = '#78350f';
+                        ctx.fillRect(rx, 275 - obs.height, obs.width, obs.height);
+                        ctx.fillStyle = '#a16207';
+                        ctx.fillRect(rx + 4, 275 - obs.height + 4, obs.width - 8, obs.height - 8);
+                    }
+                }
+            });
+
+            // Placas de Quiz / Checkpoint
+            checkpoints.forEach(cp => {
+                const rx = cp.x - cameraX;
+                if (rx > -50 && rx < canvas.width + 50) {
+                    ctx.fillStyle = '#854d0e';
+                    ctx.fillRect(rx + 12, 235, 8, 40);
+                    ctx.fillStyle = cp.passed ? '#10b981' : '#f59e0b';
+                    ctx.fillRect(rx, 215, 32, 24);
+                    ctx.fillStyle = '#0f172a';
+                    ctx.font = 'bold 10px "Press Start 2P"';
+                    ctx.fillText('QUIZ', rx + 2, 231);
+                }
+            });
+
+            // Personagem Sobrevivente
+            const prx = player.x - cameraX;
+            ctx.save();
+            ctx.translate(prx + player.width / 2, player.y + player.height);
+            ctx.scale(player.facingRight ? player.squashX : -player.squashX, player.squashY);
+
+            ctx.fillStyle = 'rgba(0,0,0,0.35)';
+            ctx.beginPath();
+            ctx.ellipse(0, 0, 14, 5, 0, 0, Math.PI * 2);
+            ctx.fill();
+
+            ctx.fillStyle = '#0284c7';
+            ctx.fillRect(-12, -36, 24, 22);
+
+            ctx.fillStyle = '#b45309';
+            ctx.fillRect(-18, -34, 7, 18);
+
+            ctx.fillStyle = '#334155';
+            const legOffset = Math.sin(player.animFrame) * 6;
+            ctx.fillRect(-10, -14, 8, 14 + legOffset);
+            ctx.fillRect(2, -14, 8, 14 - legOffset);
+
+            ctx.fillStyle = '#fed7aa';
+            ctx.fillRect(-10, -48, 20, 14);
+            ctx.fillStyle = '#ec4899';
+            ctx.fillRect(-12, -52, 24, 6);
+            ctx.fillRect(0, -48, 14, 3);
+
+            // Lanterna
+            ctx.fillStyle = 'rgba(250, 204, 21, 0.18)';
+            ctx.beginPath();
+            ctx.moveTo(6, -30);
+            ctx.lineTo(130, -55);
+            ctx.lineTo(130, 15);
+            ctx.closePath();
+            ctx.fill();
+
+            ctx.restore();
+
+            // Chuva com Respingo de Água
+            ctx.strokeStyle = 'rgba(186, 230, 253, 0.6)';
+            ctx.lineWidth = 1.5;
+            rainDrops.forEach(drop => {
+                drop.x += drop.speedX;
+                drop.y += drop.speedY;
+                if (drop.y > 275) {
+                    ctx.fillStyle = 'rgba(224, 242, 254, 0.5)';
+                    ctx.beginPath();
+                    ctx.arc(drop.x, 275, 2.5, 0, Math.PI * 2);
+                    ctx.fill();
+
+                    drop.y = -10;
+                    drop.x = Math.random() * canvas.width;
+                }
+                ctx.beginPath();
+                ctx.moveTo(drop.x, drop.y);
+                ctx.lineTo(drop.x + drop.speedX, drop.y + drop.length);
+                ctx.stroke();
+            });
+        }
+
+        function updatePhysics() {
+            if (activeQuiz) return;
+
+            if (keys['KeyD'] || keys['ArrowRight']) {
+                player.vx += player.accel;
+                player.facingRight = true;
+            } else if (keys['KeyA'] || keys['ArrowLeft']) {
+                player.vx -= player.accel;
+                player.facingRight = false;
+            } else {
+                player.vx *= player.friction;
+            }
+
+            player.vx = Math.max(-player.speed, Math.min(player.speed, player.vx));
+            player.x += player.vx;
+
+            if (player.grounded) {
+                player.coyoteTime = 6;
+            } else {
+                player.coyoteTime--;
+            }
+
+            if (keys['Space'] || keys['KeyW'] || keys['ArrowUp']) {
+                player.jumpBuffer = 5;
+            } else {
+                player.jumpBuffer--;
+            }
+
+            if (player.jumpBuffer > 0 && player.coyoteTime > 0) {
+                player.vy = player.jumpForce;
+                player.grounded = false;
+                player.coyoteTime = 0;
+                player.jumpBuffer = 0;
+                player.squashX = 0.7;
+                player.squashY = 1.3;
+                playSound('jump');
+                triggerVibration(25);
+            }
+
+            player.vy += player.gravity;
+            if (player.vy > 0) player.vy += 0.15;
+            player.y += player.vy;
+
+            const groundY = 235;
+            if (player.y >= groundY) {
+                if (!player.grounded && player.vy > 4) {
+                    player.squashX = 1.25;
+                    player.squashY = 0.75;
+                }
+                player.y = groundY;
+                player.vy = 0;
+                player.grounded = true;
+            }
+
+            player.squashX += (1 - player.squashX) * 0.15;
+            player.squashY += (1 - player.squashY) * 0.15;
+
+            if (player.x < 20) player.x = 20;
+
+            cameraX = player.x - 150;
+            if (cameraX < 0) cameraX = 0;
+
+            const totalDistance = 3500;
+            gameState.distanceLeft = Math.max(0, Math.floor(1000 - (player.x / totalDistance) * 1000));
+            document.getElementById('rpg-distance').innerText = `${gameState.distanceLeft}m`;
+
+            if (gameState.distanceLeft <= 0) {
+                triggerVictory();
+                return;
+            }
+
+            obstacles.forEach(obs => {
+                if (player.x + player.width > obs.x &&
+                    player.x < obs.x + obs.width &&
+                    player.y + player.height > obs.y) {
+                    
+                    playSound('hit');
+                    triggerVibration(80);
+                    player.hp -= 15;
+                    updateHpUI();
+                    player.x -= 40;
+                    player.vx = -3;
+
+                    if (player.hp <= 0) {
+                        triggerGameOver();
+                    }
+                }
+            });
+
+            checkpoints.forEach(cp => {
+                if (!cp.passed && player.x + player.width > cp.x) {
+                    cp.passed = true;
+                    currentQuizIndex = cp.qIndex;
+                    openQuizModal();
+                }
+            });
+        }
+
+        function gameLoop() {
+            updatePhysics();
+            render();
+            gameLoopId = requestAnimationFrame(gameLoop);
+        }
+
+        function updateHpUI() {
+            document.getElementById('rpg-hp-text').innerText = `${Math.max(0, player.hp)}/100`;
+        }
+
+        function openQuizModal() {
+            activeQuiz = true;
+            const qData = quizQuestions[currentQuizIndex % quizQuestions.length];
+            document.getElementById('quiz-question').innerText = qData.q;
+            
+            const optionsContainer = document.getElementById('quiz-options');
+            optionsContainer.innerHTML = '';
+
+            qData.options.forEach((opt, idx) => {
+                const btn = document.createElement('button');
+                btn.className = "w-full text-left bg-slate-800 hover:bg-slate-700 p-3 rounded border border-slate-600 text-slate-100 text-sm transition-all";
+                btn.innerText = `${idx + 1}. ${opt}`;
+                btn.onclick = () => answerQuiz(idx === qData.correct);
+                optionsContainer.appendChild(btn);
+            });
+
+            document.getElementById('quiz-modal').classList.remove('hidden');
+        }
+
+        function answerQuiz(isCorrect) {
+            document.getElementById('quiz-modal').classList.add('hidden');
+            activeQuiz = false;
+
+            if (isCorrect) {
+                playSound('correct');
+                player.hp = Math.min(100, player.hp + 25);
+                updateHpUI();
+            } else {
+                playSound('hit');
+                player.hp = Math.max(0, player.hp - 10);
+                updateHpUI();
+                if (player.hp <= 0) triggerGameOver();
+            }
+        }
+
+        function triggerGameOver() {
+            cancelAnimationFrame(gameLoopId);
+            document.getElementById('end-title').innerText = "FIM DE JOGO";
+            document.getElementById('end-title').className = "pixel-font text-xl mb-4 text-rose-500";
+            document.getElementById('end-message').innerText = "Você não resistiu aos perigos da floresta. Tente novamente!";
+            document.getElementById('end-modal').classList.remove('hidden');
+        }
+
+        function triggerVictory() {
+            cancelAnimationFrame(gameLoopId);
+            document.getElementById('end-title').innerText = "MUITO BEM!";
+            document.getElementById('end-title').className = "pixel-font text-xl mb-4 text-emerald-400";
+            document.getElementById('end-message').innerText = "Parabéns! Você utilizou seu conhecimento e habilidades para encontrar o Último Abrigo da SETEC!";
+            document.getElementById('end-modal').classList.remove('hidden');
+        }
+
+        function resetGame() {
+            document.getElementById('end-modal').classList.add('hidden');
+            player.x = 80;
+            player.y = 200;
+            player.vx = 0;
+            player.vy = 0;
+            player.hp = 100;
+            updateHpUI();
+            
+            checkpoints.forEach(cp => cp.passed = false);
+            gameLoop();
+        }
+
+        function startGameFromMenu() {
+            document.getElementById('start-menu-screen').classList.add('hidden');
+            document.getElementById('game-header').classList.remove('hidden');
+            document.getElementById('rpg-game-screen').classList.remove('hidden');
+            initRpgGame();
+        }
+
+        function initRpgGame() {
+            canvas = document.getElementById('gameCanvas');
+            ctx = canvas.getContext('2d');
+
+            obstacles = [
+                { x: 320, y: 235, width: 28, height: 32, type: 'log' },
+                { x: 620, y: 245, width: 32, height: 24, type: 'spikes' },
+                { x: 1050, y: 235, width: 36, height: 32, type: 'log' },
+                { x: 1350, y: 245, width: 40, height: 24, type: 'spikes' },
+                { x: 1850, y: 235, width: 32, height: 32, type: 'log' },
+                { x: 2200, y: 245, width: 48, height: 24, type: 'spikes' },
+                { x: 2700, y: 235, width: 36, height: 32, type: 'log' }
+            ];
+
+            checkpoints = [
+                { x: 500, qIndex: 0, passed: false },
+                { x: 1200, qIndex: 1, passed: false },
+                { x: 1900, qIndex: 2, passed: false },
+                { x: 2500, qIndex: 3, passed: false }
+            ];
+
+            initEnvironmentEffects();
+
+            window.addEventListener('keydown', e => keys[e.code] = true);
+            window.addEventListener('keyup', e => keys[e.code] = false);
+
+            // Suporte Touch Mobile
+            const btnLeft = document.getElementById('btn-left');
+            const btnRight = document.getElementById('btn-right');
+            const btnJump = document.getElementById('btn-jump');
+
+            btnLeft.addEventListener('touchstart', (e) => { e.preventDefault(); keys['KeyA'] = true; });
+            btnLeft.addEventListener('touchend', (e) => { e.preventDefault(); keys['KeyA'] = false; });
+            btnRight.addEventListener('touchstart', (e) => { e.preventDefault(); keys['KeyD'] = true; });
+            btnRight.addEventListener('touchend', (e) => { e.preventDefault(); keys['KeyD'] = false; });
+            btnJump.addEventListener('touchstart', (e) => { e.preventDefault(); keys['Space'] = true; });
+            btnJump.addEventListener('touchend', (e) => { e.preventDefault(); keys['Space'] = false; });
+
+            if (gameLoopId) cancelAnimationFrame(gameLoopId);
+            gameLoop();
+        }
+
+        // Inicialização ao Carregar a Página
+        window.onload = function() {
+            document.documentElement.style.setProperty('--brightness-level', '1');
+            document.getElementById('start-menu-screen').classList.remove('hidden');
+            document.getElementById('game-header').classList.add('hidden');
+            document.getElementById('rpg-game-screen').classList.add('hidden');
+        };
+    </script>
+</body>
+</html>
